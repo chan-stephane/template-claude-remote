@@ -1,0 +1,39 @@
+services:
+  claude-remote:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - GIT_USER_NAME=${GIT_USER_NAME}
+        - GIT_USER_EMAIL=${GIT_USER_EMAIL}
+    image: claude-remote:latest
+    container_name: claude-remote
+    env_file:
+      - .env
+    volumes:
+      - /path/to/your/ssh_github_key:/root/.ssh/id_ed25519:ro
+      - claude-config:/root/.claude
+      - /path/to/your/workspace:/workspace
+
+  code-server:
+    image: lscr.io/linuxserver/code-server:latest
+    container_name: code-server
+    env_file:
+      - .env
+    environment:
+      - DEFAULT_WORKSPACE=/workspace
+    volumes:
+      - code-server-config:/config
+      - /path/to/your/ssh_github_key:/config/.ssh/id_ed25519:ro
+      - /path/to/your/workspace:/workspace
+    ports:
+      - 8443:8443
+    restart: unless-stopped
+
+volumes:
+  claude-config:
+    driver: local
+    name: claude-config
+  code-server-config:
+    driver: local
+    name: code-server-config

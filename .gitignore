@@ -1,0 +1,4 @@
+.env
+deploy_key
+workspace/
+claude-config/
