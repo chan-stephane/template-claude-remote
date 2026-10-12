@@ -1,24 +1,41 @@
 services:
   claude-remote:
     build:
-      context: .
+      context: ./claude-remote
       dockerfile: Dockerfile
       args:
         - GIT_USER_NAME=${GIT_USER_NAME}
         - GIT_USER_EMAIL=${GIT_USER_EMAIL}
+        - DEVICE_NAME=${DEVICE_NAME}
     image: claude-remote:latest
     container_name: claude-remote
     env_file:
+      - ./databases/.env
       - .env
     volumes:
       - /path/to/your/ssh_github_key:/root/.ssh/id_ed25519:ro
       - claude-config:/root/.claude
       - /path/to/your/workspace:/workspace
+    networks:
+      - claude-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
   code-server:
-    image: lscr.io/linuxserver/code-server:latest
+    build:
+      context: ./vscode-server
+      dockerfile: Dockerfile
+      args:
+        - GIT_USER_NAME=${GIT_USER_NAME}
+        - GIT_USER_EMAIL=${GIT_USER_EMAIL}
+    image: custom-code-server:latest
     container_name: code-server
     env_file:
+      - ./databases/.env
       - .env
     environment:
       - DEFAULT_WORKSPACE=/workspace
@@ -29,6 +46,43 @@ services:
     ports:
       - 8443:8443
     restart: unless-stopped
+    networks:
+      - claude-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-claude
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    env_file:
+      - ./databases/.env
+    networks:
+      - claude-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+      
+  redis:
+    image: redis:8.10-alpine
+    container_name: redis-claude
+    restart: unless-stopped
+    networks:
+      - claude-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 volumes:
   claude-config:
@@ -37,3 +91,11 @@ volumes:
   code-server-config:
     driver: local
     name: code-server-config
+  postgres-data:
+    driver: local
+    name: postgres-data
+
+networks:
+  claude-network:
+    driver: bridge
+    name: claude-network
