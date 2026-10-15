@@ -7,6 +7,7 @@ services:
         - GIT_USER_NAME=${GIT_USER_NAME}
         - GIT_USER_EMAIL=${GIT_USER_EMAIL}
         - DEVICE_NAME=${DEVICE_NAME}
+        - CDP_AUTH_TOKEN=${CDP_AUTH_TOKEN}
     image: claude-remote:latest
     container_name: claude-remote
     env_file:
