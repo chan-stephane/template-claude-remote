@@ -11,7 +11,6 @@ services:
     image: claude-remote:latest
     container_name: claude-remote
     env_file:
-      - ./browser/.env
       - ./databases/.env
       - .env
     volumes:
@@ -67,7 +66,7 @@ services:
     ports:
       - 6080:6080
     env_file:
-      - ./browser/.env
+      - .env
     environment:
       - ENABLE_HOST_GATEWAY=true
     healthcheck:
