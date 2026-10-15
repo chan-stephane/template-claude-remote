@@ -10,6 +10,7 @@ services:
     image: claude-remote:latest
     container_name: claude-remote
     env_file:
+      - ./browser/.env
       - ./databases/.env
       - .env
     volumes:
@@ -22,6 +23,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      browser:
         condition: service_healthy
     restart: unless-stopped
 
@@ -53,6 +56,33 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+  
+  browser:
+    image: psycharch/chrome-novnc-cdp:2026.5
+    container_name: browser
+    restart: unless-stopped
+    networks:
+      - claude-network
+    ports:
+      - 6080:6080
+    env_file:
+      - ./browser/.env
+    environment:
+      - ENABLE_HOST_GATEWAY=true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9222/json/version"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1.5G
+        reservations:
+          cpus: "0.5"
+          memory: 1G
 
   postgres:
     image: postgres:16-alpine

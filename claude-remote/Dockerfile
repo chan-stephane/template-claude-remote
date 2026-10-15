@@ -57,4 +57,6 @@ ENV DEVICE_NAME=${DEVICE_NAME}
 RUN git config --global user.name "${GIT_USER_NAME}" && \
     git config --global user.email "${GIT_USER_EMAIL}"
 
+RUN claude mcp add playwright -- npx @playwright/mcp@latest --cdp-endpoint http://browser:9222 --cdp-header "Authorization: Bearer ${CDP_AUTH_TOKEN}"
+
 CMD claude remote-control --name "${DEVICE_NAME}"
